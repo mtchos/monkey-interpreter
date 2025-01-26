@@ -6,13 +6,13 @@ import (
 
 type Lexer struct {
 	input   string
-	pos     int
+	currPos int
 	nextPos int
 	ch      byte
 }
 
-func New(i string) *Lexer {
-	l := &Lexer{input: i}
+func New(input string) *Lexer {
+	l := &Lexer{input: input}
 	l.readChar()
 	return l
 }
@@ -24,9 +24,35 @@ func (l *Lexer) NextToken() token.Token {
 
 	switch l.ch {
 	case '=':
-		tk = newToken(token.ASSIGN, l.ch)
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			str := string(ch) + string(l.ch)
+			tk = newToken(token.EQ, str)
+		} else {
+			tk = newToken(token.ASSIGN, l.ch)
+		}
+	case '!':
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			str := string(ch) + string(l.ch)
+			tk = newToken(token.NEQ, str)
+		} else {
+			tk = newToken(token.BANG, l.ch)
+		}
 	case '+':
 		tk = newToken(token.PLUS, l.ch)
+	case '-':
+		tk = newToken(token.MINUS, l.ch)
+	case '*':
+		tk = newToken(token.ASTERISK, l.ch)
+	case '/':
+		tk = newToken(token.SLASH, l.ch)
+	case '<':
+		tk = newToken(token.LT, l.ch)
+	case '>':
+		tk = newToken(token.GT, l.ch)
 	case ',':
 		tk = newToken(token.COMMA, l.ch)
 	case ';':
@@ -56,10 +82,18 @@ func (l *Lexer) NextToken() token.Token {
 		}
 	}
 
-	// Lexer ch pointer is advanced
+	// Lexer ch pointer is moved forward
 	l.readChar()
 
 	return tk
+}
+
+func (l *Lexer) peekChar() byte {
+	if l.nextPos >= len(l.input) {
+		return 0
+	} else {
+		return l.input[l.nextPos]
+	}
 }
 
 func (l *Lexer) readChar() {
@@ -68,24 +102,29 @@ func (l *Lexer) readChar() {
 	} else {
 		l.ch = l.input[l.nextPos]
 	}
-	l.pos = l.nextPos
+
+	l.currPos = l.nextPos
 	l.nextPos += 1
 }
 
 func (l *Lexer) readIdentifier() string {
-	pos := l.pos
+	pos := l.currPos
+
 	for isLetter(l.ch) {
 		l.readChar()
 	}
-	return l.input[pos:l.pos]
+
+	return l.input[pos:l.currPos]
 }
 
 func (l *Lexer) readInteger() string {
-	pos := l.pos
+	pos := l.currPos
+
 	for isDigit(l.ch) {
 		l.readChar()
 	}
-	return l.input[pos:l.pos]
+
+	return l.input[pos:l.currPos]
 }
 
 func (l *Lexer) skipWhitespace() {
@@ -102,6 +141,6 @@ func isLetter(char byte) bool {
 	return 'a' <= char && char <= 'z' || 'A' <= char && char <= 'Z' || char == '_'
 }
 
-func newToken(tokenType token.TokenType, char byte) token.Token {
-	return token.Token{Type: tokenType, Literal: string(char)}
+func newToken[T byte | string](tkType token.TokenType, lit T) token.Token {
+	return token.Token{Type: tkType, Literal: string(lit)}
 }
