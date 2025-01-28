@@ -27,7 +27,7 @@ Monkey is a simple, toy programming language designed to teach the fundamental c
    ```
 2. Navigate to the repository folder:
    ```bash
-   cd monkey-interpreter
+   cd monkey-interpreter/src/monkey
    ```
 3. Build the project:
    ```bash
